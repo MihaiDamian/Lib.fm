@@ -1,18 +1,28 @@
+import urllib
+import urllib2
+
 __all__ = ['LibFM']
 
 # The last.fm API schema. Proxy objects are generated based on this
 API_SCHEMA = {
     'artist' : {
             'getInfo' : [('artist', ['optional']),
-                         ]
+                         ('mbid', ['optional']),
+                         ('username', ['optional']),
+                         ('lang', ['optional']),
+                         ],
+            'getEvents' : [('artist', []),
+                           ]
         },
     'user' : {
             'getRecentTracks' : [('user', []),
                                  ('limit', ['optional']),
                                  ('page', ['optional']),
-                                 ]
+                                 ],
         },
     }
+
+LIBFM_URL = 'http://ws.audioscrobbler.com/2.0'
 
 class Proxy(object):
     """Base proxy class"""
@@ -54,13 +64,14 @@ def _generate_proxies():
 
 _generate_proxies()
 
-class ArtistProxy(ArtistProxy):
-    """Example proxy class for artist namespace."""
-    
-    def getInfo(self, artist=None):
-        """An overriden method."""
-        
-        return "custom getInfo"
+
+#class ArtistProxy(ArtistProxy):
+#    """Example proxy class for artist namespace."""
+#    
+#    def getInfo(self, artist=None):
+#        """An overriden method."""
+#        
+#        return "custom getInfo"
 
 class LibFM(object):
     """Provides access to last.fm API."""
@@ -75,10 +86,17 @@ class LibFM(object):
     def __call__(self, name, args=None):
         """Handle standard API methods."""
 
-        return "do it all: %s" % name
+        url = urllib.urlencode(self._create_post_args(name, args))
+        return urllib2.urlopen(LIBFM_URL, url).read()
+
+    def _create_post_args(self, name, args):
+        post_args = {'method' : name}
+        post_args.update(args)
+        post_args.update({'api_key' : self._api_key})
+        return post_args
 
 if __name__ == '__main__':
     # TODO: moves these to a unit test
     libFM = LibFM("b25b959554ed76058ac220b7b2e0a026")
-    print libFM.artist.getInfo()
+    #print libFM.artist.getInfo()
     print libFM.user.getRecentTracks('user',page=5)
