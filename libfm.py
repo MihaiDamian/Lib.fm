@@ -1,3 +1,4 @@
+import md5
 import urllib
 import urllib2
 
@@ -5,24 +6,31 @@ __all__ = ['LibFM']
 
 # The last.fm API schema. Proxy objects are generated based on this
 API_SCHEMA = {
+    'album' : {
+            'addTags' : [('artist', []),
+                         ('album', []),
+                         ('tags', []),
+                         ('sk', []),
+                ],
+        },
     'artist' : {
             'getInfo' : [('artist', ['optional']),
                          ('mbid', ['optional']),
                          ('username', ['optional']),
                          ('lang', ['optional']),
-                         ],
+                ],
             'getEvents' : [('artist', []),
-                           ]
+                ],
         },
     'user' : {
             'getRecentTracks' : [('user', []),
                                  ('limit', ['optional']),
                                  ('page', ['optional']),
-                                 ],
+                ],
         },
     }
 
-LIBFM_URL = 'http://ws.audioscrobbler.com/2.0'
+LIBFM_URL = 'http://ws.audioscrobbler.com/2.0/'
 
 class Proxy(object):
     """Base proxy class"""
@@ -87,16 +95,29 @@ class LibFM(object):
         """Handle standard API methods."""
 
         url = urllib.urlencode(self._create_post_args(name, args))
-        return urllib2.urlopen(LIBFM_URL, url).read()
+        response_string = urllib2.urlopen(LIBFM_URL, url).read()
+        return response_string
 
     def _create_post_args(self, name, args):
-        post_args = {'method' : name}
-        post_args.update(args)
-        post_args.update({'api_key' : self._api_key})
-        return post_args
+        args['method'] = name
+        args['api_key'] = self._api_key
+        args['format'] = 'json'
+
+        if 'sk' in args:
+            args['api_sig'] = self._sign_method(args)
+        return args
+
+    def _sign_method(self, args):
+        params = args.items()
+        params.sort()
+        call_mangle = ''
+        for name, value in params:
+            call_mangle = call_mangle + name + str(value)
+        return md5.new(call_mangle).hexdigest()
 
 if __name__ == '__main__':
     # TODO: moves these to a unit test
     libFM = LibFM("b25b959554ed76058ac220b7b2e0a026")
     #print libFM.artist.getInfo()
-    print libFM.user.getRecentTracks('user',page=5)
+    #print libFM.user.getRecentTracks('user',page=5)
+    print libFM.album.addTags('luna amara','asflat','rock','signature')
