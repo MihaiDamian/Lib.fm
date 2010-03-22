@@ -94,18 +94,32 @@ class LibFM(object):
     def __call__(self, name, args=None):
         """Handle standard API methods."""
 
-        url = urllib.urlencode(self._create_post_args(name, args))
-        response_string = urllib2.urlopen(LIBFM_URL, url).read()
-        return response_string
+        request_args = self._create_request_args(name, args)
+        if 'sk' in args:
+            response = self._do_post_request(request_args)
+        else:
+            response = self._do_get_request(request_args)
+        return response.read()
 
-    def _create_post_args(self, name, args):
+    def _do_post_request(self, args):
+        return urllib2.urlopen(LIBFM_URL, args)
+
+    def _do_get_request(self, args):
+        return urllib2.urlopen(LIBFM_URL + '?' + args)
+
+    def _create_request_args(self, name, args):
+        """
+        Transforms method name & args to application/x-www-form-urlencoded
+
+        """
+        
         args['method'] = name
         args['api_key'] = self._api_key
         args['format'] = 'json'
 
         if 'sk' in args:
             args['api_sig'] = self._sign_method(args)
-        return args
+        return urllib.urlencode(args)
 
     def _sign_method(self, args):
         params = args.items()
@@ -119,5 +133,5 @@ if __name__ == '__main__':
     # TODO: moves these to a unit test
     libFM = LibFM("b25b959554ed76058ac220b7b2e0a026")
     #print libFM.artist.getInfo()
-    #print libFM.user.getRecentTracks('user',page=5)
-    print libFM.album.addTags('luna amara','asflat','rock','signature')
+    print libFM.user.getRecentTracks('user',page=5)
+    #print libFM.album.addTags('luna amara','asflat','rock','signature')
