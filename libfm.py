@@ -11,15 +11,28 @@ API_SCHEMA = {
                          ('album', []),
                          ('tags', []),
                          ('sk', []),
+                         ('api_sig', ['auto']),
                 ],
         },
     'artist' : {
+            'addTags' : [('artist', []),
+                         ('tags', []),
+                         ('sk', []),
+                         ('api_sig', ['auto']),
+                ],
             'getInfo' : [('artist', ['optional']),
                          ('mbid', ['optional']),
                          ('username', ['optional']),
                          ('lang', ['optional']),
                 ],
             'getEvents' : [('artist', []),
+                ],
+        },
+    'auth' : {
+            'getToken' : [('api_sig', ['auto']),
+                ],
+            'getSession' : [('token', []),
+                            ('api_sig', ['auto'])
                 ],
         },
     'user' : {
@@ -52,11 +65,12 @@ def _generate_proxies():
             body_add_params = []
             for param_name, param_options in API_SCHEMA[namespace][method]:
                 param = param_name
-                if 'optional' in param_options:
+                if 'optional' in param_options or 'auto' in param_options:
                     param = '%s=None' % param_name
+                if 'optional' in param_options:
                     body_add_params.append( \
-                        'if %s is not None: args["%s"] = %s' %
-                        (param_name, param_name, param_name))
+                                'if %s is not None: args["%s"] = %s' %
+                                (param_name, param_name, param_name))
                 else:
                     body_add_params.append('args["%s"] = %s' %
                                            (param_name, param_name))
@@ -73,19 +87,12 @@ def _generate_proxies():
 _generate_proxies()
 
 
-#class ArtistProxy(ArtistProxy):
-#    """Example proxy class for artist namespace."""
-#    
-#    def getInfo(self, artist=None):
-#        """An overriden method."""
-#        
-#        return "custom getInfo"
-
 class LibFM(object):
     """Provides access to last.fm API."""
 
-    def __init__(self, api_key):
+    def __init__(self, api_key, secret):
         self._api_key = api_key
+        self._secret = secret
         
         for namespace in API_SCHEMA:
             self.__dict__[namespace] = eval('%sProxy(self, "%s")' \
@@ -95,17 +102,16 @@ class LibFM(object):
         """Handle standard API methods."""
 
         request_args = self._create_request_args(name, args)
-        if 'sk' in args:
-            response = self._do_post_request(request_args)
+        if 'api_sig' in args:
+            return self._do_post_request(request_args)
         else:
-            response = self._do_get_request(request_args)
-        return response.read()
+            return eval(self._do_get_request(request_args))
 
     def _do_post_request(self, args):
-        return urllib2.urlopen(LIBFM_URL, args)
+        return urllib2.urlopen(LIBFM_URL, args).read()
 
     def _do_get_request(self, args):
-        return urllib2.urlopen(LIBFM_URL + '?' + args)
+        return urllib2.urlopen(LIBFM_URL + '?' + args).read()
 
     def _create_request_args(self, name, args):
         """
@@ -115,9 +121,11 @@ class LibFM(object):
         
         args['method'] = name
         args['api_key'] = self._api_key
-        args['format'] = 'json'
+        if 'api_sig' not in args:
+            args['format'] = 'json'
 
-        if 'sk' in args:
+        if 'api_sig' in args:
+            del args['api_sig']
             args['api_sig'] = self._sign_method(args)
         return urllib.urlencode(args)
 
@@ -127,11 +135,4 @@ class LibFM(object):
         call_mangle = ''
         for name, value in params:
             call_mangle = call_mangle + name + str(value)
-        return md5.new(call_mangle).hexdigest()
-
-if __name__ == '__main__':
-    # TODO: moves these to a unit test
-    libFM = LibFM("b25b959554ed76058ac220b7b2e0a026")
-    #print libFM.artist.getInfo()
-    print libFM.user.getRecentTracks('user',page=5)
-    #print libFM.album.addTags('luna amara','asflat','rock','signature')
+        return md5.new(call_mangle + self._secret).hexdigest()
