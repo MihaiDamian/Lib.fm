@@ -1,8 +1,22 @@
 import md5
 import urllib
 import urllib2
+from xml.dom import minidom
+
+SIMPLEJSON_LOADED = True
+try:
+    import json as simplejson
+except ImportError:
+    try:
+        import simplejson
+    except ImportError:
+        try:
+            from django.utils import simplejson
+        except ImportError:
+            SIMPLEJSON_LOADED = False
 
 __all__ = ['LibFM']
+
 
 # The last.fm API schema. Proxy objects are generated based on this
 API_SCHEMA = {
@@ -86,6 +100,14 @@ def _generate_proxies():
 
 _generate_proxies()
 
+class LibFMError(Exception):
+
+    def __init__(self, code, message):
+        self._code = code
+        self._message = message
+
+    def __str__(self):
+        return 'Error %s: %s' % (self._code, self._message)
 
 class LibFM(object):
     """Provides access to last.fm API."""
@@ -101,27 +123,49 @@ class LibFM(object):
     def __call__(self, name, args=None):
         """Handle standard API methods."""
 
-        request_args = self._create_request_args(name, args)
+        request_type = 'GET'
         if 'api_sig' in args:
-            return self._do_post_request(request_args)
+            request_type = 'POST'
+        response_format = 'XML'
+        if request_type == 'GET' and SIMPLEJSON_LOADED:
+            response_format = 'JSON'
+
+        request_args = self._create_request_args(name, args, response_format)
+        response = self._do_request(request_args, request_type)
+
+        if response_format == 'JSON':
+            return self._parse_json_response(response)
         else:
-            return eval(self._do_get_request(request_args))
+            return self._parse_xml_response(response)
 
-    def _do_post_request(self, args):
-        return urllib2.urlopen(LIBFM_URL, args).read()
+    def _do_request(self, args, request_type):
+        if request_type == 'GET':
+            call_params = (LIBFM_URL + '?' + args, None)
+        else:
+            call_params = (LIBFM_URL, args)
+        return urllib2.urlopen(call_params[0], call_params[1]).read()
 
-    def _do_get_request(self, args):
-        return urllib2.urlopen(LIBFM_URL + '?' + args).read()
+    def _parse_xml_response(self, reponse):
+        return reponse
 
-    def _create_request_args(self, name, args):
+    def _parse_json_response(self, response):
+        result = simplejson.loads(response)
+        self._handle_errors(result)
+        return result
+
+    def _handle_errors(self, response):
+        if 'error' in response:
+            raise LibFMError(response['error'], response['message'])
+
+    def _create_request_args(self, name, args, response_format):
         """
-        Transforms method name & args to application/x-www-form-urlencoded
+        Transform method name & args to application/x-www-form-urlencoded
 
         """
         
         args['method'] = name
         args['api_key'] = self._api_key
-        if 'api_sig' not in args:
+        if response_format == 'JSON':
             args['format'] = 'json'
 
         if 'api_sig' in args:
