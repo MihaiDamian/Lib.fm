@@ -15,7 +15,7 @@ except ImportError:
         except ImportError:
             SIMPLEJSON_LOADED = False
 
-__all__ = ['LibFM']
+__all__ = ['LibFM', 'LibFMError',]
 
 
 # The last.fm API schema. Proxy objects are generated based on this
@@ -50,9 +50,13 @@ API_SCHEMA = {
                 ],
         },
     'user' : {
+            'getEvents' : [('user', []),
+                ],
             'getRecentTracks' : [('user', []),
                                  ('limit', ['optional']),
                                  ('page', ['optional']),
+                ],
+            'getShouts' : [('user', []),
                 ],
         },
     }
