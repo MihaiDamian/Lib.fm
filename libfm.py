@@ -122,6 +122,7 @@ class LibFM(object):
     def __init__(self, api_key, secret):
         self.api_key = api_key
         self.secret = secret
+        self.force_xml_responses = False
         
         for namespace in API_SCHEMA:
             self.__dict__[namespace] = eval('%sProxy(self, "%s")' \
@@ -134,7 +135,8 @@ class LibFM(object):
         if 'api_sig' in args:
             request_type = 'POST'
         response_format = 'XML'
-        if request_type == 'GET' and SIMPLEJSON_LOADED:
+        if request_type == 'GET' and SIMPLEJSON_LOADED and not \
+            self.force_xml_responses:
             response_format = 'JSON'
 
         request_args = self._create_request_args(name, args, response_format)
