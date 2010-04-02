@@ -120,8 +120,8 @@ class LibFM(object):
     """Provides access to last.fm API."""
 
     def __init__(self, api_key, secret):
-        self._api_key = api_key
-        self._secret = secret
+        self.api_key = api_key
+        self.secret = secret
         
         for namespace in API_SCHEMA:
             self.__dict__[namespace] = eval('%sProxy(self, "%s")' \
@@ -241,7 +241,7 @@ class LibFM(object):
         """
         
         args['method'] = name
-        args['api_key'] = self._api_key
+        args['api_key'] = self.api_key
         if response_format == 'JSON':
             args['format'] = 'json'
 
@@ -256,4 +256,4 @@ class LibFM(object):
         call_mangle = ''
         for name, value in params:
             call_mangle = call_mangle + name + str(value)
-        return md5.new(call_mangle + self._secret).hexdigest()
+        return md5.new(call_mangle + self.secret).hexdigest()
