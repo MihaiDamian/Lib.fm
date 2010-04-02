@@ -2,6 +2,7 @@ import md5
 import urllib
 import urllib2
 from xml.dom import minidom
+from xml.parsers.expat import ExpatError
 
 SIMPLEJSON_LOADED = True
 try:
@@ -15,7 +16,7 @@ except ImportError:
         except ImportError:
             SIMPLEJSON_LOADED = False
 
-__all__ = ['LibFM', 'LibFMError',]
+__all__ = ['LibFM', 'LibFMError', ]
 
 
 # The last.fm API schema. Proxy objects are generated based on this
@@ -40,6 +41,8 @@ API_SCHEMA = {
                          ('lang', ['optional']),
                 ],
             'getEvents' : [('artist', []),
+                ],
+            'getTopFans': [('artist', []),
                 ],
         },
     'auth' : {
@@ -135,7 +138,16 @@ class LibFM(object):
             response_format = 'JSON'
 
         request_args = self._create_request_args(name, args, response_format)
-        response = self._do_request(request_args, request_type)
+        try:
+            response = self._do_request(request_args, request_type)
+        except urllib2.HTTPError, httpException:
+            try:
+                # the server will occasionally raise HTTP errors for XML reqs.
+                error_body = httpException.read()
+                minidom.parseString(error_body)
+                return self._parse_xml_response(error_body)
+            except ExpatError:
+                raise httpException
 
         if response_format == 'JSON':
             return self._parse_json_response(response)
@@ -148,16 +160,76 @@ class LibFM(object):
         else:
             call_params = (LIBFM_URL, args)
         return urllib2.urlopen(call_params[0], call_params[1]).read()
+    
+    def _node_attributes_to_dict(self, node):
+        """
+        Create a dictionary from a NamedNodeMap
+        
+        Required because NamedNodeMap does not behave 100% like a dict
+        """
+        
+        result = {}
+        for (key, value) in node.attributes.items():
+            result.update({key : value})
+        return result
 
-    def _parse_xml_response(self, reponse):
-        return reponse
+    def _parse_node(self, node):
+        if node.nodeType == node.DOCUMENT_NODE:
+            return self._parse_node(node.childNodes[0])
+        
+        if node.nodeType == node.ELEMENT_NODE and \
+            len(filter(lambda x : x.nodeType != node.TEXT_NODE, \
+                      node.childNodes)) == 0:
+            node_text = ''.join(node.data for node in node.childNodes)
+            if node.hasAttributes():
+                node_content = self._node_attributes_to_dict(node)
+                node_content.update({'#text' : node_text})
+            else:
+                node_content = node_text
+            return {node.nodeName : node_content}
+            
+        if node.nodeType == node.TEXT_NODE:
+            return {}
+        
+        result = {}
+        for child in node.childNodes:
+            if child.nodeType == child.ELEMENT_NODE:
+                child_result = self._parse_node(child)
+                if len(child_result) == 0:
+                    break
+                child_name = child_result.keys()[0]
+                child_value = child_result.values()[0]
+                if child_name in result:
+                    if type(result[child_name]) is list:
+                        result[child_name].append(child_value)
+                    else:
+                        result[child_name] = [result[child_name], child_value]
+                else:
+                    result.update(child_result)
+        if node.hasAttributes():
+            attributes = self._node_attributes_to_dict(node)
+            result.update({'@attr' : attributes})
+        return {node.nodeName : result}
+
+    def _parse_xml_response(self, response):
+        """Transform XML structure to dictionaries-lists structure"""
+        
+        xml_doc = minidom.parseString(response)
+        result = self._parse_node(xml_doc)
+        result = self._handle_xml_errors(result)
+        xml_doc.unlink()
+        return result
 
     def _parse_json_response(self, response):
         result = simplejson.loads(response)
-        self._handle_errors(result)
+        self._handle_json_errors(result)
         return result
 
-    def _handle_errors(self, response):
+    def _handle_xml_errors(self, response):
+        error = response['lfm']['error']
+        raise LibFMError(error['code'], error['#text'])
+
+    def _handle_json_errors(self, response):
         if 'error' in response:
             raise LibFMError(response['error'], response['message'])
 
