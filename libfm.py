@@ -216,9 +216,9 @@ class LibFM(object):
         
         xml_doc = minidom.parseString(response)
         result = self._parse_node(xml_doc)
-        result = self._handle_xml_errors(result)
+        self._handle_xml_errors(result)
         xml_doc.unlink()
-        return result
+        return result['lfm']
 
     def _parse_json_response(self, response):
         result = simplejson.loads(response)
@@ -226,8 +226,9 @@ class LibFM(object):
         return result
 
     def _handle_xml_errors(self, response):
-        error = response['lfm']['error']
-        raise LibFMError(error['code'], error['#text'])
+        if 'error' in response['lfm']:
+            error = response['lfm']['error']
+            raise LibFMError(error['code'], error['#text'])
 
     def _handle_json_errors(self, response):
         if 'error' in response:
