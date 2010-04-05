@@ -112,11 +112,11 @@ _generate_proxies()
 class LibFMError(Exception):
 
     def __init__(self, code, message):
-        self._code = code
-        self._message = message
+        self.code = code
+        self.message = message
 
     def __str__(self):
-        return 'Error %s: %s' % (self._code, self._message)
+        return 'Error %s: %s' % (self.code, self.message)
 
 class LibFM(object):
     """Provides access to last.fm API."""
