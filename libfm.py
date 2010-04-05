@@ -117,6 +117,12 @@ class LibFMError(Exception):
 
     def __str__(self):
         return 'Error %s: %s' % (self.code, self.message)
+    
+    def __eq__(self, other):
+        if isinstance(other, LibFMError):
+            return self.code == other.code and self.message == other.message
+        else:
+            return NotImplemented
 
 class LibFM(object):
     """Provides access to last.fm API."""
