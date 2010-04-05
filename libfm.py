@@ -220,7 +220,10 @@ class LibFM(object):
         result = self._parse_node(xml_doc)
         self._handle_xml_errors(result)
         xml_doc.unlink()
-        return result['lfm']
+        #strip lfm node & it's attributes
+        result = result['lfm']
+        del result['@attr']
+        return result
 
     def _parse_json_response(self, response):
         result = simplejson.loads(response)
