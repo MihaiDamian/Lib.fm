@@ -42,6 +42,8 @@ API_SCHEMA = {
                 ],
             'getEvents' : [('artist', []),
                 ],
+            'getTopTracks' : [('artist', []),
+                ],
             'getTopFans': [('artist', []),
                 ],
         },
