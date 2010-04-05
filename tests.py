@@ -3,19 +3,19 @@ from libfm import LibFM
 from libfm import LibFMError
 
 
-class Test(unittest.TestCase):
+class TestLibFM(unittest.TestCase):
 
 
     def setUp(self):
-        self.libFM = LibFM("2b3268cef9e10b81c4359cd03b4e6373", 
-                           "f935eb35203409a4fc3f7fc37318ab3e")
+        self.libFM = LibFM('2b3268cef9e10b81c4359cd03b4e6373', 
+                           'f935eb35203409a4fc3f7fc37318ab3e')
         #for generating not-found errors
         self.fake_user = 'erheherhreherhe'
         self.fake_artist = 'wdehgehrhrhrh'
 
 
     def test_dynamic_method_loading(self):
-        response = self.libFM.artist.getInfo("Nirvana")
+        response = self.libFM.artist.getInfo('Nirvana')
         self.assertTrue('artist' in response)
         
     def test_named_parameters(self):
@@ -44,8 +44,24 @@ class Test(unittest.TestCase):
                 self.fail('Call of artist.getTopTracks with fake artist name \
                     %s should have raised an error.' % self.fake_artist)
             except LibFMError, json_error:
-                self.assertEqual(xml_error, json_error, 'XML and JSON \
-                    responses raise different errors')
+                self.assertEqual(xml_error, json_error, 
+                                'XML and JSON responses raise different errors')
+                
+class TestLibFMError(unittest.TestCase):
+    
+    def test_libfmerror(self):
+        err0 = LibFMError('1', 'Error message')
+        err1 = LibFMError('1', 'Error message')
+        err2 = LibFMError(1, 'Error message')
+        err3 = LibFMError('2', 'Error message')
+        err4 = LibFMError('1', 'Message')
+        self.assertTrue(err0 == err1, 'Identical errors should be equal')
+        self.assertTrue(err0 == err2, 
+                    'Error codes specified as str or int should be equal')
+        self.assertFalse(err0 == err3, 
+                    'Errors with different error codes should be different')
+        self.assertFalse(err0 == err4, 
+                    'Errors with different messages should be different')
                 
 
 if __name__ == "__main__":
