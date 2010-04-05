@@ -112,7 +112,7 @@ _generate_proxies()
 class LibFMError(Exception):
 
     def __init__(self, code, message):
-        self.code = code
+        self.code = int(code)
         self.message = message
 
     def __str__(self):
