@@ -16,6 +16,8 @@ class TestLibFM(unittest.TestCase):
         self.session_key = None
 
     def session(method):
+        """Skip methods that require authentication when sk is not hardcoded"""
+        
         def wrapper(self, *args, **kwargs):
             if self.session_key != None:
                 return method(self, *args, **kwargs)
@@ -24,14 +26,17 @@ class TestLibFM(unittest.TestCase):
         return wrapper
 
     def test_dynamic_method_loading(self):
+        """Sanity check on dynamically generated API methods"""
         response = self.libFM.artist.getInfo('Nirvana')
         self.assertTrue('artist' in response)
         
     def test_named_parameters(self):
         response = self.libFM.user.getRecentTracks(limit=5, user='rj')
-        self.assertTrue('recenttracks' in response)
+        self.assertTrue('recenttracks' in response,
+                        'Named parameters should work on generated methods')
 
     def test_response_error_handling(self):
+        """Checking exceptions raised from error codes"""
         self.assertRaises(LibFMError, self.libFM.user.getShouts, self.fake_user)
 
     @session
@@ -44,6 +49,7 @@ class TestLibFM(unittest.TestCase):
         self.assertTrue(False, 'Method failed to write')
         
     def test_xml_eq_json_normal_response(self):
+        """Check if XML and JSON responses are seamless"""
         xml_response = self.libFM.artist.getTopFans('Pearl Jam')
         self.libFM.force_xml_responses = True
         json_response = self.libFM.artist.getTopFans('Pearl Jam')
@@ -51,6 +57,7 @@ class TestLibFM(unittest.TestCase):
                          'XML and JSON requests produce different results')
         
     def test_xml_eq_json_error_response(self):
+        """Check if error containing XML and JSON responses are seamless"""
         try:
             xml_response = self.libFM.artist.getTopTracks(self.fake_artist)
             self.fail('Call of artist.getTopTracks with fake artist name %s \
@@ -63,7 +70,7 @@ class TestLibFM(unittest.TestCase):
                     %s should have raised an error.' % self.fake_artist)
             except LibFMError, json_error:
                 self.assertEqual(xml_error, json_error, 
-                                'XML and JSON responses raise different errors')
+                            'XML and JSON responses raise different errors')
                 
 class TestLibFMError(unittest.TestCase):
     
