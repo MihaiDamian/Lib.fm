@@ -230,7 +230,8 @@ class LibFM(object):
         xml_doc.unlink()
         #strip lfm node & it's attributes
         result = result['lfm']
-        del result['@attr']
+        if '@attr' in result:
+            del result['@attr']
         return result
 
     def _parse_json_response(self, response):
