@@ -12,7 +12,16 @@ class TestLibFM(unittest.TestCase):
         #for generating not-found errors
         self.fake_user = 'erheherhreherhe'
         self.fake_artist = 'wdehgehrhrhrh'
+        #see http://www.last.fm/api/desktopauth for how to generate your own sk
+        self.session_key = None
 
+    def session(method):
+        def wrapper(self, *args, **kwargs):
+            if self.session_key != None:
+                return method(self, *args, **kwargs)
+            else:
+                return
+        return wrapper
 
     def test_dynamic_method_loading(self):
         response = self.libFM.artist.getInfo('Nirvana')
@@ -24,6 +33,15 @@ class TestLibFM(unittest.TestCase):
 
     def test_response_error_handling(self):
         self.assertRaises(LibFMError, self.libFM.user.getShouts, self.fake_user)
+
+    @session
+    def test_write_method(self):
+        response = self.libFM.artist.addTags('Pearl Jam', 'Grunge',
+                                            self.session_key)
+        if 'status' in response:
+            if response['status'] == 'ok':
+                return
+        self.assertTrue(False, 'Method failed to write')
         
     def test_xml_eq_json_normal_response(self):
         xml_response = self.libFM.artist.getTopFans('Pearl Jam')
