@@ -188,8 +188,8 @@ class LibFM(object):
             return self._parse_node(node.childNodes[0])
         
         if node.nodeType == node.ELEMENT_NODE and \
-            len(filter(lambda x : x.nodeType != node.TEXT_NODE, \
-                      node.childNodes)) == 0:
+            len(filter(lambda x : x.nodeType != node.TEXT_NODE and \
+                x.nodeType != node.CDATA_SECTION_NODE, node.childNodes)) == 0:
             node_text = ''.join(node.data for node in node.childNodes)
             if node.hasAttributes():
                 node_content = self._node_attributes_to_dict(node)
