@@ -1,9 +1,15 @@
+import inspect
 import unittest
 from libfm import LibFM
 from libfm import LibFMError
 
 
 class TestLibFM(unittest.TestCase):
+
+    TESTS = (
+        (lambda target : target.artist.getInfo('Down'), None),
+        #(lambda target : target.artist.getEvents('Kiss'), None),
+    )
 
 
     def setUp(self):
@@ -59,18 +65,56 @@ class TestLibFM(unittest.TestCase):
     def test_xml_eq_json_error_response(self):
         """Check if error containing XML and JSON responses are seamless"""
         try:
-            xml_response = self.libFM.artist.getTopTracks(self.fake_artist)
+            self.libFM.artist.getTopTracks(self.fake_artist)
             self.fail('Call of artist.getTopTracks with fake artist name %s \
                 should have raised an error.' % self.fake_artist)
         except LibFMError, xml_error:
             self.libFM.force_xml_responses = True
             try:
-                json_response = self.libFM.artist.getTopTracks(self.fake_artist)
+                self.libFM.artist.getTopTracks(self.fake_artist)
                 self.fail('Call of artist.getTopTracks with fake artist name \
                     %s should have raised an error.' % self.fake_artist)
             except LibFMError, json_error:
                 self.assertEqual(xml_error, json_error, 
                             'XML and JSON responses raise different errors')
+                
+    class DifferentResultsError(Exception):
+
+        def __init__(self, message, result1, result2):
+            self.message = message
+            self.result1 = result1
+            self.result2 = result2
+
+        def __str__(self):
+            return '%s\n%s\n%s' % (self.message, self.result1, self.result2)
+
+    @session
+    def test_all_methods(self):
+        """Invoking all API methods"""
+        test_status = True
+        for test_function, expected_result in TestLibFM.TESTS:
+            try:
+                self.libFM.force_xml_responses = False
+                json = test_function(self.libFM)
+                self.libFM.force_xml_responses = True
+                xml = test_function(self.libFM)
+                if json != xml:
+                    raise TestLibFM.DifferentResultsError(
+                        'XML and JSON responses differ', xml, json)
+                if expected_result is not None:
+                    if json != expected_result:
+                        raise TestLibFM.DifferentResultsError(
+                                'Wrong result', json, expected_result)
+                    if xml != expected_result:
+                        raise TestLibFM.DifferentResultsError(
+                                'Wrong result', xml, expected_result)
+            except Exception, ex:
+                print ex
+                print 'Error encountered in API call: %s' % \
+                            inspect.getsource(test_function)
+                test_status = False
+        self.assertTrue(test_status, 'Some API calls have failed')
+    
                 
 class TestLibFMError(unittest.TestCase):
     
