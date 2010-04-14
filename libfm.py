@@ -171,16 +171,18 @@ class LibFM(object):
             call_params = (LIBFM_URL, args)
         return urllib2.urlopen(call_params[0], call_params[1]).read()
     
-    def _node_attributes_to_dict(self, node):
+    def _parse_node_attributes(self, node):
         """
-        Create a dictionary from a NamedNodeMap
+        Create a dictionary from a NamedNodeMap and discards namespace nodes
         
-        Required because NamedNodeMap does not behave 100% like a dict
+        NamedNodeMap does not behave 100% like a dict.
+        Namespaces are ignored since they're not available in JSON
         """
         
         result = {}
         for (key, value) in node.attributes.items():
-            result.update({key : value})
+            if ':' not in key:
+                result.update({key : value})
         return result
 
     def _parse_node(self, node):
@@ -189,7 +191,7 @@ class LibFM(object):
                 x.nodeType != node.CDATA_SECTION_NODE, node.childNodes)) == 0:
             node_text = ''.join(node.data for node in node.childNodes)
             if node.hasAttributes():
-                node_content = self._node_attributes_to_dict(node)
+                node_content = self._parse_node_attributes(node)
                 node_content.update({'#text' : node_text})
             else:
                 node_content = node_text
@@ -214,7 +216,7 @@ class LibFM(object):
                 else:
                     result.update(child_result)
         if node.hasAttributes():
-            attributes = self._node_attributes_to_dict(node)
+            attributes = self._parse_node_attributes(node)
             result.update({'@attr' : attributes})
         return {node.nodeName : result}
 
