@@ -184,9 +184,6 @@ class LibFM(object):
         return result
 
     def _parse_node(self, node):
-        if node.nodeType == node.DOCUMENT_NODE:
-            return self._parse_node(node.childNodes[0])
-        
         if node.nodeType == node.ELEMENT_NODE and \
             len(filter(lambda x : x.nodeType != node.TEXT_NODE and \
                 x.nodeType != node.CDATA_SECTION_NODE, node.childNodes)) == 0:
@@ -225,6 +222,8 @@ class LibFM(object):
         """Transform XML structure to dictionaries-lists structure"""
         
         xml_doc = minidom.parseString(response)
+        if xml_doc.nodeType == xml_doc.DOCUMENT_NODE:
+            xml_doc = xml_doc.childNodes[0]
         result = self._parse_node(xml_doc)
         self._handle_xml_errors(result)
         xml_doc.unlink()
