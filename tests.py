@@ -8,7 +8,7 @@ class TestLibFM(unittest.TestCase):
 
     TESTS = (
         (lambda target : target.artist.getInfo('Down'), None),
-        #(lambda target : target.artist.getEvents('Kiss'), None),
+        (lambda target : target.artist.getEvents('Kiss'), None),
     )
 
 

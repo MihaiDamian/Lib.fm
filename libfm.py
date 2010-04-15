@@ -217,7 +217,8 @@ class LibFM(object):
                     result.update(child_result)
         if node.hasAttributes():
             attributes = self._parse_node_attributes(node)
-            result.update({'@attr' : attributes})
+            if len(attributes) > 0:
+                result.update({'@attr' : attributes})
         return {node.nodeName : result}
 
     def _parse_xml_response(self, response):
