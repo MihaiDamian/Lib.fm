@@ -149,20 +149,23 @@ class LibFM(object):
 
         request_args = self._create_request_args(name, args, response_format)
         try:
-            response = self._do_request(request_args, request_type)
+            http_response = self._do_request(request_args, request_type)
         except urllib2.HTTPError, httpException:
             try:
                 # the server will occasionally raise HTTP errors for XML reqs.
                 error_body = httpException.read()
                 minidom.parseString(error_body)
-                return self._parse_xml_response(error_body)
+                response = XMLResponse(error_body)
+                return response.parse()
             except ExpatError:
                 raise httpException
-
+            
         if response_format == 'JSON':
-            return self._parse_json_response(response)
+            response = JSONResponse(http_response)
         else:
-            return self._parse_xml_response(response)
+            response = XMLResponse(http_response)
+            
+        return response.parse()
 
     def _do_request(self, args, request_type):
         if request_type == 'GET':
@@ -170,21 +173,72 @@ class LibFM(object):
         else:
             call_params = (LIBFM_URL, args)
         return urllib2.urlopen(call_params[0], call_params[1]).read()
-    
-    def _parse_node_attributes(self, node):
-        """
-        Create a dictionary from a NamedNodeMap and discards namespace nodes
-        
-        NamedNodeMap does not behave 100% like a dict.
-        Namespaces are ignored since they're not available in JSON
-        """
-        
-        result = {}
-        for (key, value) in node.attributes.items():
-            if ':' not in key:
-                result.update({key : value})
-        return result
 
+    def _create_request_args(self, name, args, response_format):
+        """
+        Transform method name & args to application/x-www-form-urlencoded
+
+        """
+        
+        args['method'] = name
+        args['api_key'] = self.api_key
+        if response_format == 'JSON':
+            args['format'] = 'json'
+
+        if 'api_sig' in args:
+            del args['api_sig']
+            args['api_sig'] = self._sign_method(args)
+        return urllib.urlencode(args)
+
+    def _sign_method(self, args):
+        params = args.items()
+        params.sort()
+        call_mangle = ''
+        for name, value in params:
+            call_mangle = call_mangle + name + str(value)
+        return md5.new(call_mangle + self.secret).hexdigest()
+    
+class LibFMResponse(object):
+    
+    def __init__(self, response):
+        self.response = response
+        
+    def parse(self):
+        pass
+    
+class JSONResponse(LibFMResponse):
+    
+    def parse(self):
+        result = simplejson.loads(self.response)
+        self._handle_errors(result)
+        return result
+    
+    def _handle_errors(self, response):
+        if 'error' in response:
+            raise LibFMError(response['error'], response['message'])
+
+class XMLResponse(LibFMResponse):
+    
+    def parse(self):
+        """Transform XML structure to dictionaries-lists structure"""
+        
+        xml_doc = minidom.parseString(self.response)
+        if xml_doc.nodeType == xml_doc.DOCUMENT_NODE:
+            xml_doc = xml_doc.childNodes[0]
+        result = self._parse_node(xml_doc)
+        self._handle_errors(result)
+        xml_doc.unlink()
+        #strip lfm node & it's attributes
+        result = result['lfm']
+        if '@attr' in result:
+            del result['@attr']
+        return result
+    
+    def _handle_errors(self, response):
+        if 'error' in response['lfm']:
+            error = response['lfm']['error']
+            raise LibFMError(error['code'], error['#text'])
+    
     def _parse_node(self, node):
         if node.nodeType == node.ELEMENT_NODE and \
             len(filter(lambda x : x.nodeType != node.TEXT_NODE and \
@@ -220,56 +274,17 @@ class LibFM(object):
             if len(attributes) > 0:
                 result.update({'@attr' : attributes})
         return {node.nodeName : result}
-
-    def _parse_xml_response(self, response):
-        """Transform XML structure to dictionaries-lists structure"""
-        
-        xml_doc = minidom.parseString(response)
-        if xml_doc.nodeType == xml_doc.DOCUMENT_NODE:
-            xml_doc = xml_doc.childNodes[0]
-        result = self._parse_node(xml_doc)
-        self._handle_xml_errors(result)
-        xml_doc.unlink()
-        #strip lfm node & it's attributes
-        result = result['lfm']
-        if '@attr' in result:
-            del result['@attr']
-        return result
-
-    def _parse_json_response(self, response):
-        result = simplejson.loads(response)
-        self._handle_json_errors(result)
-        return result
-
-    def _handle_xml_errors(self, response):
-        if 'error' in response['lfm']:
-            error = response['lfm']['error']
-            raise LibFMError(error['code'], error['#text'])
-
-    def _handle_json_errors(self, response):
-        if 'error' in response:
-            raise LibFMError(response['error'], response['message'])
-
-    def _create_request_args(self, name, args, response_format):
+    
+    def _parse_node_attributes(self, node):
         """
-        Transform method name & args to application/x-www-form-urlencoded
-
+        Create a dictionary from a NamedNodeMap and discards namespace nodes
+        
+        NamedNodeMap does not behave 100% like a dict.
+        Namespaces are ignored since they're not available in JSON
         """
         
-        args['method'] = name
-        args['api_key'] = self.api_key
-        if response_format == 'JSON':
-            args['format'] = 'json'
-
-        if 'api_sig' in args:
-            del args['api_sig']
-            args['api_sig'] = self._sign_method(args)
-        return urllib.urlencode(args)
-
-    def _sign_method(self, args):
-        params = args.items()
-        params.sort()
-        call_mangle = ''
-        for name, value in params:
-            call_mangle = call_mangle + name + str(value)
-        return md5.new(call_mangle + self.secret).hexdigest()
+        result = {}
+        for (key, value) in node.attributes.items():
+            if ':' not in key:
+                result.update({key : value})
+        return result
