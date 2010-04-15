@@ -199,11 +199,18 @@ class LibFM(object):
         return md5.new(call_mangle + self.secret).hexdigest()
     
 class LibFMResponse(object):
+    """Base class for handling lib.fm responses."""
     
     def __init__(self, response):
+        """Takes as input the string content of a HTTP response"""
         self.response = response
         
     def parse(self):
+        """
+        Each subclass should implement this.
+        
+        Returns a JSON-like dictionary-list structure.
+        """
         pass
     
 class JSONResponse(LibFMResponse):
@@ -240,6 +247,7 @@ class XMLResponse(LibFMResponse):
             raise LibFMError(error['code'], error['#text'])
     
     def _parse_node(self, node):
+        #parse nodes that contain only text or CDATA
         if node.nodeType == node.ELEMENT_NODE and \
             len(filter(lambda x : x.nodeType != node.TEXT_NODE and \
                 x.nodeType != node.CDATA_SECTION_NODE, node.childNodes)) == 0:
@@ -250,10 +258,16 @@ class XMLResponse(LibFMResponse):
             else:
                 node_content = node_text
             return {node.nodeName : node_content}
-            
-        if node.nodeType == node.TEXT_NODE:
-            return {}
         
+        #recursively parse nodes that contain other nodes
+        result = self._parse_child_elements(node)
+        if node.hasAttributes():
+            attributes = self._parse_node_attributes(node)
+            if len(attributes) > 0:
+                result.update({'@attr' : attributes})
+        return {node.nodeName : result}
+    
+    def _parse_child_elements(self, node):
         result = {}
         for child in node.childNodes:
             if child.nodeType == child.ELEMENT_NODE:
@@ -269,11 +283,7 @@ class XMLResponse(LibFMResponse):
                         result[child_name] = [result[child_name], child_value]
                 else:
                     result.update(child_result)
-        if node.hasAttributes():
-            attributes = self._parse_node_attributes(node)
-            if len(attributes) > 0:
-                result.update({'@attr' : attributes})
-        return {node.nodeName : result}
+        return result
     
     def _parse_node_attributes(self, node):
         """
