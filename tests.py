@@ -41,9 +41,28 @@ class TestLibFM(unittest.TestCase):
         self.assertTrue('recenttracks' in response,
                         'Named parameters should work on generated methods')
 
+    def test_no_parameters(self):
+        """Making sure methods w/o parameters work fine"""
+        response = self.libFM.geo.getMetroWeeklyChartlist()
+        self.assertTrue('weeklychartlist' in response, 'Error in method w/o \
+                parameters')
+
     def test_response_error_handling(self):
         """Checking exceptions raised from error codes"""
         self.assertRaises(LibFMError, self.libFM.user.getShouts, self.fake_user)
+
+    def test_overridden_method(self):
+        """Checking an overridden API method"""
+        error_msg = 'Method overriding failed'
+        try:
+            response = self.libFM.group.getWeeklyAlbumChart(group='mnml')
+            self.assertTrue('weeklyalbumchart' in response, error_msg)
+            # also test if non-overridden methods still work in a namespace
+            # that contains overridden methods
+            response = self.libFM.group.getMembers('mnml')
+            self.assertTrue('members' in response, error_msg)
+        except:
+            self.assertTrue(False, error_msg)
 
     @session
     def test_write_method(self):
