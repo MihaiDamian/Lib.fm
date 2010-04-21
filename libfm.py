@@ -19,7 +19,23 @@ except ImportError:
 __all__ = ['LibFM', 'LibFMError', ]
 
 
-# The last.fm API schema. Proxy objects are generated based on this
+# The last.fm API schema. Proxy objects are generated based on this.
+#
+#   The schema contains a dictionary of namespaces.
+#   A namespace contains a dictionary of methods.
+#   A method contains a list of parameter.
+#   A parameter is a tuple containing it's title and a list of flags.
+#   The available flags are auto and optional.
+#   Parameters flagged as optional may be ommited from method calls.
+#   Auto parameters should not be passed with the method call. They are
+# provided by the library. This flag is used only by the library.
+#   All other parameters are by default required.
+#   Parameter order is not important, except that required parameters should be
+# placed before all other types of parameters.
+#   The api_sig parameter is included by the library automatically, for all
+# methods.
+
+
 API_SCHEMA = {
     'album' : {
             'addTags' : [('artist', []),
@@ -28,6 +44,40 @@ API_SCHEMA = {
                          ('sk', []),
                          ('api_sig', ['auto']),
                 ],
+            'getBuylinks' : [('artist', ['optional']),
+                             ('album', ['optional']),
+                             ('mbid', ['optional']),
+                             ('country', ['optional']),
+                ],
+            'getInfo' : [('artist', ['optional']),
+                         ('album', ['optional']),
+                         ('mbid', ['optional']),
+                         ('username', ['optional']),
+                         ('lang', ['optional']),
+                ],
+            'getTags' : [('artist', []),
+                         ('album', []),
+                         ('sk', []),
+                         ('api_sig', ['auto']),
+                ],
+            'removeTag' : [('artist', []),
+                           ('album', []),
+                           ('tag', []),
+                           ('sk', []),
+                           ('api_sig', ['auto']),
+                ],
+            'search' : [('album', []),
+                        ('limit', ['optional']),
+                        ('page', ['optional']),
+                ],
+            'share' : [('artist', []),
+                       ('album', []),
+                       ('recipient', []),
+                       ('sk', []),
+                       ('public', ['optional']),
+                       ('message', ['optional']),
+                       ('api_sig', ['auto']),
+                ],
         },
     'artist' : {
             'addTags' : [('artist', []),
@@ -35,25 +85,249 @@ API_SCHEMA = {
                          ('sk', []),
                          ('api_sig', ['auto']),
                 ],
+            'getEvents' : [('artist', []),
+                ],
+            'getImages' : [('artist', []),
+                           ('page', ['optional']),
+                           ('limit', ['optional']),
+                           ('order', ['optional']),
+                ],
             'getInfo' : [('artist', ['optional']),
                          ('mbid', ['optional']),
                          ('username', ['optional']),
                          ('lang', ['optional']),
                 ],
-            'getEvents' : [('artist', []),
+            'getPastEvents' : [('artist', []),
+                               ('page', ['optional']),
+                               ('limit', ['optional']),
+                ],
+            'getPodcast' : [('artist', []),
+                ],
+            'getShouts' : [('artist', []),
+                           ('limit', []),
+                           ('page', []),
+                ],
+            'getSimilar' : [('artist', []),
+                            ('limit', ['optional']),
+                ],
+            'getTags' : [('artist', []),
+                         ('sk', []),
+                         ('api_sig', ['auto']),
+                ],
+            'getTopAlbums' : [('artist', []),
+                ],
+            'getTopFans' : [('artist', []),
+                ],
+            'getTopTags' : [('artist', []),
                 ],
             'getTopTracks' : [('artist', []),
                 ],
-            'getTopFans': [('artist', []),
+            'removeTag' : [('artist', []),
+                           ('tag', []),
+                           ('sk', []),
+                           ('api_sig', ['auto']),
+                ],
+            'search' : [('artist', []),
+                        ('limit', ['optional']),
+                        ('page', ['optional']),
+                ],
+            'share' : [('artist', []),
+                       ('recipient', []),
+                       ('sk', []),
+                       ('message', ['optional']),
+                       ('public', ['optional']),
+                       ('api_sig', ['auto']),
+                ],
+            'shout' : [('artist', []),
+                       ('message', []),
+                       ('sk', []),
+                       ('api_sig', ['auto']),
                 ],
         },
     'auth' : {
-            'getToken' : [('api_sig', ['auto']),
+            'getMobileSession' : [('username', []),
+                                  ('authToken', []),
+                                  ('api_sig', ['auto']),
                 ],
             'getSession' : [('token', []),
                             ('api_sig', ['auto'])
                 ],
+            'getToken' : [('api_sig', ['auto']),
+                ],
         },
+    'event' : {
+            'attend' : [('event', []),
+                        ('status', []),
+                        ('sk', []),
+                        ('api_sig', ['auto']),
+                ],
+            'getAttendees' : [('event', []),
+                ],
+            'getInfo' : [('event', []),
+                ],
+            'getShouts' : [('event', []),
+                ],
+            'share' : [('event', []),
+                       ('recipient', []),
+                       ('sk', []),
+                       ('public', ['optional']),
+                       ('message', ['optional']),
+                       ('api_sig', ['auto']),
+                ],
+            'shout' : [('event', []),
+                       ('message', []),
+                       ('sk', []),
+                       ('api_sig', ['auto']),
+                ],
+        },
+    'geo' : {
+            'getEvents' : [('location', ['optional']),
+                           ('lat', ['optional']),
+                           ('long', ['optional']),
+                           ('page', ['optional']),
+                           ('distance', ['optional']),
+                ],
+            'getMetroArtistChart' : [('country', []),
+                                     ('metro', []),
+                                     ('start', ['optional']),
+                                     ('end', ['optional']),
+                ],
+            'getMetroHypeArtistChart' : [('country', []),
+                                         ('metro', []),
+                                         ('start', ['optional']),
+                                         ('end', ['optional']),
+                ],
+            'getMetroHypeTrackChart' : [('country', []),
+                                        ('metro', []),
+                                        ('start', ['optional']),
+                                        ('end', ['optional']),
+                ],
+            'getMetroTrackChart' : [('country', []),
+                                    ('metro', []),
+                                    ('start', ['optional']),
+                                    ('end', ['optional']),
+                ],
+            'getMetroUniqueArtistChart' : [('country', []),
+                                           ('metro', []),
+                                           ('start', []),
+                                           ('end', []),
+                ],
+            'getMetroUniqueTrackChart' : [('country', []),
+                                          ('metro', []),
+                                          ('start', []),
+                                          ('end', []),
+                ],
+            'getMetroWeeklyChartlist' : [
+                ],
+            'getTopArtists' : [('country', []),
+                ],
+            'getTopTracks' : [('country', []),
+                              ('location', ['optional']),
+                ],
+        },
+    'group' : {
+            'getMembers' : [('group', []),
+                ],
+            'getWeeklyAlbumChart' : [('group', []),
+                                     ('from_date', ['optional']),
+                                     ('to', ['optional']),
+                ],
+            'getWeeklyArtistChart' : [('group', []),
+                                      ('from_date', ['optional']),
+                                      ('to', ['optional']),
+                ],
+            'getWeeklyChartList' : [('group', []),
+                ],
+            'getWeeklyTrackChart' : [('group', []),
+                                     ('from_date', ['optional']),
+                                     ('to', ['optional']),
+                ],
+        },
+    'library' : {
+            'addAlbum' : [('artist', []),
+                          ('album', []),
+                          ('sk', []),
+                          ('api_sig', ['auto']),
+                ],
+            'addArtist' : [('artist', []),
+                           ('sk', []),
+                           ('api_sig', ['auto']),
+                ],
+            'addTrack' : [('artist', []),
+                          ('track', []),
+                          ('sk', []),
+                          ('api_sig', ['optional']),
+                ],
+            'getAlbums' : [('user', []),
+                           ('artist', ['optional']),
+                           ('limit', ['optional']),
+                           ('page', ['optional']),
+                ],
+            'getArtists' : [('user', []),
+                            ('limit', ['optional']),
+                            ('page', ['optional']),
+                ],
+            'getTracks' : [('user', []),
+                           ('artist', ['optional']),
+                           ('album', ['optional']),
+                           ('page', ['optional']),
+                           ('limit', ['optional']),
+                ],
+        },
+    'playlist' : {
+             'addTrack' : [('playlistID', []),
+                           ('track', []),
+                           ('artist', []),
+                           ('sk', []),
+                           ('api_sig', ['auto']),
+                ],
+             'create' : [('sk', []),
+                         ('title', ['optional']),
+                         ('description', ['optional']),
+                         ('api_sig', ['auto']),
+                ],
+             'fetch' : [('playlistURL', []),
+               ],
+        },
+    'radio' : {
+            'getPlaylist' : [('sk', []),
+                             ('discovery', ['optional']),
+                             ('rtp', ['optional']),
+                             ('bitrate', ['optional']),
+                             ('buylinks', ['optional']),
+                             ('speed_multiplier', ['optional']),
+                             ('api_sig', ['auto']),
+               ],
+            'tune' : [('station', []),
+                      ('sk', []),
+                      ('lang', []),
+                      ('api_sig', ['auto']),
+               ],
+        },
+    'tag' : {
+            'getSimilar' : [('tag', []),
+               ],
+            'getTopAlbums' : [
+               ],
+            'getTopArtists' : [
+               ],
+            'getTopTags' : [
+               ],
+            'getTopTracks' : [
+               ],
+            'getWeeklyArtistChart' : [('tag', []),
+                                      ('from_date', ['optional']),
+                                      ('to', ['optional']),
+                                      ('limit', ['optional']), #TODO : needs default value
+               ],
+            'getWeeklyChartList' : [('tag', []),
+               ],
+            'search' : [('tag', []),
+                        ('limit', ['optional']),
+                        ('page', ['optional']),
+               ],
+        },
+    ##############################
     'user' : {
             'getEvents' : [('user', []),
                 ],
@@ -75,8 +349,25 @@ class Proxy(object):
         self._client = client
         self._name = name
 
-    def __call__(self, method, args):
+    def _forward(self, method, args):
+        """Forwards the call to the centralized handler"""
         return self._client('%s.%s' % (self._name, method), args)
+
+    def _pack_args(self, *args):
+        """
+        Packs arguments in a dict, removing those with value None
+
+        Input values are of the form (argname, argvalue, argname, argvalue, ..)
+        """
+        
+        arg_dict = {}
+        for arg_name, arg_value in zip(args[0::2], args[1::2]):
+            if arg_value is not None:
+                arg_dict.update({arg_name : arg_value})
+        return arg_dict
+
+    def __call__(self, method, args):
+        return self._forward(method, args)
 
 def _generate_proxies():
     """Generate proxy metaclasses for API namespaces."""
@@ -109,6 +400,29 @@ def _generate_proxies():
 
 _generate_proxies()
 
+class GroupProxy(GroupProxy):
+    """Overriding the generated proxy to rename some arguments"""
+
+    def getWeeklyAlbumChart(self, group, from_date=None, to=None):
+        args = self._pack_args('group', group, 'from', from_date, 'to', to)
+        return self._forward(self.getWeeklyAlbumChart.__name__, args)
+
+    def getWeeklyArtistChart(self, group, from_date=None, to=None):
+        args = self._pack_args('group', group, 'from', from_date, 'to', to)
+        return self._forward(self.getWeeklyArtistChart.__name__, args)
+
+    def getWeeklyTrackChart(self, group, from_date=None, to=None):
+        args = self._pack_args('group', group, 'from', from_date, 'to', to)
+        return self._forward(self.getWeeklyTrackChart.__name__, args)
+
+class TagProxy(TagProxy):
+    """Overriding the generated proxy to rename some arguments"""
+
+    def getWeeklyArtistChart(self, tag, from_date=None, to=None, limit=None):
+        args = self._pack_args('tag', tag, 'from', from_date, 'to', to, \
+                               'limit', limit)
+        return self._forward(self.getWeeklyArtistChart.__name__, args)
+
 class LibFMError(Exception):
 
     def __init__(self, code, message):
@@ -138,7 +452,7 @@ class LibFM(object):
 
     def __call__(self, name, args=None):
         """Handle standard API methods."""
-
+        
         request_type = 'GET'
         if 'api_sig' in args:
             request_type = 'POST'
