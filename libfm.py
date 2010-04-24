@@ -19,449 +19,7 @@ except ImportError:
 __all__ = ['LibFM', 'LibFMError', ]
 
 
-# The last.fm API schema. Proxy objects are generated based on this.
-#
-#   The schema contains a dictionary of namespaces.
-#   A namespace contains a dictionary of methods.
-#   A method contains a list of parameter.
-#   A parameter is a tuple containing it's title and a list of flags.
-#   The available flags are auto and optional.
-#   Parameters flagged as optional may be ommited from method calls.
-#   Auto parameters should not be passed with the method call. They are
-# provided by the library. This flag is used only by the library.
-#   All other parameters are by default required.
-#   Parameter order is not important, except that required parameters should be
-# placed before all other types of parameters.
-#   The api_sig parameter is included by the library automatically, for all
-# methods.
-
-
-API_SCHEMA = {
-    'album' : {
-            'addTags' : [('artist', []),
-                         ('album', []),
-                         ('tags', []),
-                         ('sk', []),
-                         ('api_sig', ['auto']),
-                ],
-            'getBuylinks' : [('artist', ['optional']),
-                             ('album', ['optional']),
-                             ('mbid', ['optional']),
-                             ('country', ['optional']),
-                ],
-            'getInfo' : [('artist', ['optional']),
-                         ('album', ['optional']),
-                         ('mbid', ['optional']),
-                         ('username', ['optional']),
-                         ('lang', ['optional']),
-                ],
-            'getTags' : [('artist', []),
-                         ('album', []),
-                         ('sk', []),
-                         ('api_sig', ['auto']),
-                ],
-            'removeTag' : [('artist', []),
-                           ('album', []),
-                           ('tag', []),
-                           ('sk', []),
-                           ('api_sig', ['auto']),
-                ],
-            'search' : [('album', []),
-                        ('limit', ['optional']),
-                        ('page', ['optional']),
-                ],
-            'share' : [('artist', []),
-                       ('album', []),
-                       ('recipient', []),
-                       ('sk', []),
-                       ('public', ['optional']),
-                       ('message', ['optional']),
-                       ('api_sig', ['auto']),
-                ],
-        },
-    'artist' : {
-            'addTags' : [('artist', []),
-                         ('tags', []),
-                         ('sk', []),
-                         ('api_sig', ['auto']),
-                ],
-            'getEvents' : [('artist', []),
-                ],
-            'getImages' : [('artist', []),
-                           ('page', ['optional']),
-                           ('limit', ['optional']),
-                           ('order', ['optional']),
-                ],
-            'getInfo' : [('artist', ['optional']),
-                         ('mbid', ['optional']),
-                         ('username', ['optional']),
-                         ('lang', ['optional']),
-                ],
-            'getPastEvents' : [('artist', []),
-                               ('page', ['optional']),
-                               ('limit', ['optional']),
-                ],
-            'getPodcast' : [('artist', []),
-                ],
-            'getShouts' : [('artist', []),
-                           ('limit', []),
-                           ('page', []),
-                ],
-            'getSimilar' : [('artist', []),
-                            ('limit', ['optional']),
-                ],
-            'getTags' : [('artist', []),
-                         ('sk', []),
-                         ('api_sig', ['auto']),
-                ],
-            'getTopAlbums' : [('artist', []),
-                ],
-            'getTopFans' : [('artist', []),
-                ],
-            'getTopTags' : [('artist', []),
-                ],
-            'getTopTracks' : [('artist', []),
-                ],
-            'removeTag' : [('artist', []),
-                           ('tag', []),
-                           ('sk', []),
-                           ('api_sig', ['auto']),
-                ],
-            'search' : [('artist', []),
-                        ('limit', ['optional']),
-                        ('page', ['optional']),
-                ],
-            'share' : [('artist', []),
-                       ('recipient', []),
-                       ('sk', []),
-                       ('message', ['optional']),
-                       ('public', ['optional']),
-                       ('api_sig', ['auto']),
-                ],
-            'shout' : [('artist', []),
-                       ('message', []),
-                       ('sk', []),
-                       ('api_sig', ['auto']),
-                ],
-        },
-    'auth' : {
-            'getMobileSession' : [('username', []),
-                                  ('authToken', []),
-                                  ('api_sig', ['auto']),
-                ],
-            'getSession' : [('token', []),
-                            ('api_sig', ['auto'])
-                ],
-            'getToken' : [('api_sig', ['auto']),
-                ],
-        },
-    'event' : {
-            'attend' : [('event', []),
-                        ('status', []),
-                        ('sk', []),
-                        ('api_sig', ['auto']),
-                ],
-            'getAttendees' : [('event', []),
-                ],
-            'getInfo' : [('event', []),
-                ],
-            'getShouts' : [('event', []),
-                ],
-            'share' : [('event', []),
-                       ('recipient', []),
-                       ('sk', []),
-                       ('public', ['optional']),
-                       ('message', ['optional']),
-                       ('api_sig', ['auto']),
-                ],
-            'shout' : [('event', []),
-                       ('message', []),
-                       ('sk', []),
-                       ('api_sig', ['auto']),
-                ],
-        },
-    'geo' : {
-            'getEvents' : [('location', ['optional']),
-                           ('lat', ['optional']),
-                           ('long', ['optional']),
-                           ('page', ['optional']),
-                           ('distance', ['optional']),
-                ],
-            'getMetroArtistChart' : [('country', []),
-                                     ('metro', []),
-                                     ('start', ['optional']),
-                                     ('end', ['optional']),
-                ],
-            'getMetroHypeArtistChart' : [('country', []),
-                                         ('metro', []),
-                                         ('start', ['optional']),
-                                         ('end', ['optional']),
-                ],
-            'getMetroHypeTrackChart' : [('country', []),
-                                        ('metro', []),
-                                        ('start', ['optional']),
-                                        ('end', ['optional']),
-                ],
-            'getMetroTrackChart' : [('country', []),
-                                    ('metro', []),
-                                    ('start', ['optional']),
-                                    ('end', ['optional']),
-                ],
-            'getMetroUniqueArtistChart' : [('country', []),
-                                           ('metro', []),
-                                           ('start', []),
-                                           ('end', []),
-                ],
-            'getMetroUniqueTrackChart' : [('country', []),
-                                          ('metro', []),
-                                          ('start', []),
-                                          ('end', []),
-                ],
-            'getMetroWeeklyChartlist' : [
-                ],
-            'getTopArtists' : [('country', []),
-                ],
-            'getTopTracks' : [('country', []),
-                              ('location', ['optional']),
-                ],
-        },
-    'group' : {
-            'getMembers' : [('group', []),
-                ],
-            'getWeeklyAlbumChart' : [('group', []),
-                                     ('from_date', ['optional']),
-                                     ('to', ['optional']),
-                ],
-            'getWeeklyArtistChart' : [('group', []),
-                                      ('from_date', ['optional']),
-                                      ('to', ['optional']),
-                ],
-            'getWeeklyChartList' : [('group', []),
-                ],
-            'getWeeklyTrackChart' : [('group', []),
-                                     ('from_date', ['optional']),
-                                     ('to', ['optional']),
-                ],
-        },
-    'library' : {
-            'addAlbum' : [('artist', []),
-                          ('album', []),
-                          ('sk', []),
-                          ('api_sig', ['auto']),
-                ],
-            'addArtist' : [('artist', []),
-                           ('sk', []),
-                           ('api_sig', ['auto']),
-                ],
-            'addTrack' : [('artist', []),
-                          ('track', []),
-                          ('sk', []),
-                          ('api_sig', ['optional']),
-                ],
-            'getAlbums' : [('user', []),
-                           ('artist', ['optional']),
-                           ('limit', ['optional']),
-                           ('page', ['optional']),
-                ],
-            'getArtists' : [('user', []),
-                            ('limit', ['optional']),
-                            ('page', ['optional']),
-                ],
-            'getTracks' : [('user', []),
-                           ('artist', ['optional']),
-                           ('album', ['optional']),
-                           ('page', ['optional']),
-                           ('limit', ['optional']),
-                ],
-        },
-    'playlist' : {
-             'addTrack' : [('playlistID', []),
-                           ('track', []),
-                           ('artist', []),
-                           ('sk', []),
-                           ('api_sig', ['auto']),
-                ],
-             'create' : [('sk', []),
-                         ('title', ['optional']),
-                         ('description', ['optional']),
-                         ('api_sig', ['auto']),
-                ],
-             'fetch' : [('playlistURL', []),
-               ],
-        },
-    'radio' : {
-            'getPlaylist' : [('sk', []),
-                             ('discovery', ['optional']),
-                             ('rtp', ['optional']),
-                             ('bitrate', ['optional']),
-                             ('buylinks', ['optional']),
-                             ('speed_multiplier', ['optional']),
-                             ('api_sig', ['auto']),
-               ],
-            'tune' : [('station', []),
-                      ('sk', []),
-                      ('lang', []),
-                      ('api_sig', ['auto']),
-               ],
-        },
-    'tag' : {
-            'getSimilar' : [('tag', []),
-               ],
-            'getTopAlbums' : [
-               ],
-            'getTopArtists' : [
-               ],
-            'getTopTags' : [
-               ],
-            'getTopTracks' : [
-               ],
-            'getWeeklyArtistChart' : [('tag', []),
-                                      ('from_date', ['optional']),
-                                      ('to', ['optional']),
-                                      ('limit', ['optional']),
-               ],
-            'getWeeklyChartList' : [('tag', []),
-               ],
-            'search' : [('tag', []),
-                        ('limit', ['optional']),
-                        ('page', ['optional']),
-               ],
-        },
-    'tasteometer' : {
-            'compare' : [('type1', []),
-                         ('type2', []),
-                         ('value1', []),
-                         ('value2', []),
-                         ('limit', ['optional']),
-               ],
-        },
-    'track' : {
-            'addTags' : [('artist', []),
-                         ('track', []),
-                         ('tags', []),
-                         ('sk', []),
-                         ('api_sig', ['auto']),
-               ],
-            'ban' : [('track', []),
-                     ('artist', []),
-                     ('sk', []),
-                     ('api_sig', ['auto']),
-                ],
-            'getBuylinks' : [('artist', ['optional']),
-                             ('track', ['optional']),
-                             ('mbid', ['optional']),
-                             ('country', ['optional']),
-                ],
-            'getInfo' : [('artist', ['optional']),
-                         ('track', ['optional']),
-                         ('mbid', ['optional']),
-                         ('username', ['optional']),
-                ],
-            'getSimilar' : [('track', ['optional']),
-                            ('artist', ['optional']),
-                            ('mbid', ['optional']),
-                ],
-            'getTags' : [('artist', []),
-                         ('track', []),
-                         ('sk', []),
-                         ('api_sig', ['auto']),
-                ],
-        },
-    ##############################
-    'user' : {
-            'getEvents' : [('user', []),
-                ],
-            'getRecentTracks' : [('user', []),
-                                 ('limit', ['optional']),
-                                 ('page', ['optional']),
-                ],
-            'getShouts' : [('user', []),
-                ],
-        },
-    }
-
 LIBFM_URL = 'http://ws.audioscrobbler.com/2.0/'
-
-class Proxy(object):
-    """Base proxy class"""
-    
-    def __init__(self, client, name):
-        self._client = client
-        self._name = name
-
-    def _forward(self, method, args):
-        """Forwards the call to the centralized handler"""
-        return self._client('%s.%s' % (self._name, method), args)
-
-    def _pack_args(self, *args):
-        """
-        Packs arguments in a dict, removing those with value None
-
-        Input values are of the form (argname, argvalue, argname, argvalue, ..)
-        """
-        
-        arg_dict = {}
-        for arg_name, arg_value in zip(args[0::2], args[1::2]):
-            if arg_value is not None:
-                arg_dict.update({arg_name : arg_value})
-        return arg_dict
-
-    def __call__(self, method, args):
-        return self._forward(method, args)
-
-def _generate_proxies():
-    """Generate proxy metaclasses for API namespaces."""
-    
-    for namespace in API_SCHEMA:
-        methods = {}
-        for method in API_SCHEMA[namespace]:
-            params = ['self']
-            body_add_params = []
-            for param_name, param_options in API_SCHEMA[namespace][method]:
-                param = param_name
-                if 'optional' in param_options or 'auto' in param_options:
-                    param = '%s=None' % param_name
-                if 'optional' in param_options:
-                    body_add_params.append( \
-                                'if %s is not None: args["%s"] = %s' %
-                                (param_name, param_name, param_name))
-                else:
-                    body_add_params.append('args["%s"] = %s' %
-                                           (param_name, param_name))
-                params.append(param)
-            body = ['def %s(%s):' % (method, ', '.join(params))]
-            body.append('args = {}')
-            body += body_add_params
-            body.append('return self("%s", args)' % method)
-            exec('\n    '.join(body))
-            methods[method] = eval(method)
-        proxy = type('%sProxy' % namespace.title(), (Proxy, ), methods)
-        globals()[proxy.__name__] = proxy
-
-_generate_proxies()
-
-class GroupProxy(GroupProxy):
-    """Overriding the generated proxy to rename some arguments"""
-
-    def getWeeklyAlbumChart(self, group, from_date=None, to=None):
-        args = self._pack_args('group', group, 'from', from_date, 'to', to)
-        return self._forward(self.getWeeklyAlbumChart.__name__, args)
-
-    def getWeeklyArtistChart(self, group, from_date=None, to=None):
-        args = self._pack_args('group', group, 'from', from_date, 'to', to)
-        return self._forward(self.getWeeklyArtistChart.__name__, args)
-
-    def getWeeklyTrackChart(self, group, from_date=None, to=None):
-        args = self._pack_args('group', group, 'from', from_date, 'to', to)
-        return self._forward(self.getWeeklyTrackChart.__name__, args)
-
-class TagProxy(TagProxy):
-    """Overriding the generated proxy to rename some arguments"""
-
-    def getWeeklyArtistChart(self, tag, from_date=None, to=None, limit=None):
-        args = self._pack_args('tag', tag, 'from', from_date, 'to', to, \
-                               'limit', limit)
-        return self._forward(self.getWeeklyArtistChart.__name__, args)
 
 class LibFMError(Exception):
 
@@ -485,25 +43,41 @@ class LibFM(object):
         self.api_key = api_key
         self.secret = secret
         self.force_xml_responses = False
-        
-        for namespace in API_SCHEMA:
-            self.__dict__[namespace] = eval('%sProxy(self, "%s")' \
-                            % (namespace.title(), namespace))
 
-    def __call__(self, name, args=None):
+    def read(self, method, **kwargs):
+        return self._call_method(method, kwargs, 'r')
+
+    def write(self, method, **kwargs):
+        return self._call_method(method, kwargs, 'w')
+
+    def get_token(self):
+        return self._call_method('auth.getToken', mode='w')
+
+    def get_session(self, token):
+        return self._call_method('auth.getSession', {'token' : token},
+                                 mode='w')
+
+    def _call_method(self, name, args={}, mode='r'):
         """Handle standard API methods."""
         
         request_type = 'GET'
-        if 'api_sig' in args:
+        if mode is 'w':
             request_type = 'POST'
+        
         response_format = 'XML'
         if request_type == 'GET' and SIMPLEJSON_LOADED and not \
             self.force_xml_responses:
             response_format = 'JSON'
 
-        request_args = self._create_request_args(name, args, response_format)
+        request_args = self._create_request_args(name, args, response_format,
+                                                 mode)
         try:
-            http_response = self._do_request(request_args, request_type)
+            if request_type == 'GET':
+                call_params = (LIBFM_URL + '?' + request_args, None)
+            else:
+                call_params = (LIBFM_URL, request_args)
+            http_response = urllib2.urlopen(call_params[0],
+                                            call_params[1]).read()
         except urllib2.HTTPError, httpException:
             try:
                 # the server will occasionally raise HTTP errors for XML reqs.
@@ -521,14 +95,7 @@ class LibFM(object):
             
         return response.parse()
 
-    def _do_request(self, args, request_type):
-        if request_type == 'GET':
-            call_params = (LIBFM_URL + '?' + args, None)
-        else:
-            call_params = (LIBFM_URL, args)
-        return urllib2.urlopen(call_params[0], call_params[1]).read()
-
-    def _create_request_args(self, name, args, response_format):
+    def _create_request_args(self, name, args, response_format, mode):
         """
         Transform method name & args to application/x-www-form-urlencoded
 
@@ -539,9 +106,9 @@ class LibFM(object):
         if response_format == 'JSON':
             args['format'] = 'json'
 
-        if 'api_sig' in args:
-            del args['api_sig']
+        if mode is 'w':
             args['api_sig'] = self._sign_method(args)
+        
         return urllib.urlencode(args)
 
     def _sign_method(self, args):
