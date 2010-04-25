@@ -1,15 +1,9 @@
-import inspect
 import unittest
 from libfm import LibFM
 from libfm import LibFMError
 
 
 class TestLibFM(unittest.TestCase):
-
-    TESTS = (
-        (lambda target : target.artist.getInfo('Down'), None),
-        (lambda target : target.artist.getEvents('Kiss'), None),
-    )
 
 
     def setUp(self):
@@ -30,44 +24,28 @@ class TestLibFM(unittest.TestCase):
             else:
                 return
         return wrapper
-
-    def test_dynamic_method_loading(self):
-        """Sanity check on dynamically generated API methods"""
-        response = self.libFM.artist.getInfo('Nirvana')
-        self.assertTrue('artist' in response)
         
     def test_named_parameters(self):
-        response = self.libFM.user.getRecentTracks(limit=5, user='rj')
+        response = self.libFM.read('user.getRecentTracks', limit=5, user='rj')
         self.assertTrue('recenttracks' in response,
                         'Named parameters should work on generated methods')
 
     def test_no_parameters(self):
         """Making sure methods w/o parameters work fine"""
-        response = self.libFM.geo.getMetroWeeklyChartlist()
+        response = self.libFM.read('geo.getMetroWeeklyChartlist')
         self.assertTrue('weeklychartlist' in response, 'Error in method w/o \
                 parameters')
 
     def test_response_error_handling(self):
         """Checking exceptions raised from error codes"""
-        self.assertRaises(LibFMError, self.libFM.user.getShouts, self.fake_user)
-
-    def test_overridden_method(self):
-        """Checking an overridden API method"""
-        error_msg = 'Method overriding failed'
-        try:
-            response = self.libFM.group.getWeeklyAlbumChart(group='mnml')
-            self.assertTrue('weeklyalbumchart' in response, error_msg)
-            # also test if non-overridden methods still work in a namespace
-            # that contains overridden methods
-            response = self.libFM.group.getMembers('mnml')
-            self.assertTrue('members' in response, error_msg)
-        except:
-            self.assertTrue(False, error_msg)
+        self.assertRaises(LibFMError, self.libFM.read, 'user.getShouts',
+                                                      user=self.fake_user)
 
     @session
     def test_write_method(self):
-        response = self.libFM.artist.addTags('Pearl Jam', 'Grunge',
-                                            self.session_key)
+        print 'here'
+        response = self.libFM.write('artist.addTags', artist='Pearl Jam',
+                                    tags='Grunge', sk=self.session_key)
         if 'status' in response:
             if response['status'] == 'ok':
                 return
@@ -75,64 +53,28 @@ class TestLibFM(unittest.TestCase):
         
     def test_xml_eq_json_normal_response(self):
         """Check if XML and JSON responses are seamless"""
-        xml_response = self.libFM.artist.getTopFans('Pearl Jam')
+        xml_response = self.libFM.read('artist.getTopFans', artist='Pearl Jam')
         self.libFM.force_xml_responses = True
-        json_response = self.libFM.artist.getTopFans('Pearl Jam')
+        json_response = self.libFM.read('artist.getTopFans',
+                                        artist='Pearl Jam')
         self.assertEqual(xml_response, json_response, 
                          'XML and JSON requests produce different results')
         
     def test_xml_eq_json_error_response(self):
         """Check if error containing XML and JSON responses are seamless"""
         try:
-            self.libFM.artist.getTopTracks(self.fake_artist)
+            self.libFM.read('artist.getTopTracks', artist=self.fake_artist)
             self.fail('Call of artist.getTopTracks with fake artist name %s \
                 should have raised an error.' % self.fake_artist)
         except LibFMError, xml_error:
             self.libFM.force_xml_responses = True
             try:
-                self.libFM.artist.getTopTracks(self.fake_artist)
+                self.libFM.read('artist.getTopTracks', artist=self.fake_artist)
                 self.fail('Call of artist.getTopTracks with fake artist name \
                     %s should have raised an error.' % self.fake_artist)
             except LibFMError, json_error:
                 self.assertEqual(xml_error, json_error, 
                             'XML and JSON responses raise different errors')
-                
-    class DifferentResultsError(Exception):
-
-        def __init__(self, message, result1, result2):
-            self.message = message
-            self.result1 = result1
-            self.result2 = result2
-
-        def __str__(self):
-            return '%s\n%s\n%s' % (self.message, self.result1, self.result2)
-
-    @session
-    def test_all_methods(self):
-        """Invoking all API methods"""
-        test_status = True
-        for test_function, expected_result in TestLibFM.TESTS:
-            try:
-                self.libFM.force_xml_responses = False
-                json = test_function(self.libFM)
-                self.libFM.force_xml_responses = True
-                xml = test_function(self.libFM)
-                if json != xml:
-                    raise TestLibFM.DifferentResultsError(
-                        'XML and JSON responses differ', xml, json)
-                if expected_result is not None:
-                    if json != expected_result:
-                        raise TestLibFM.DifferentResultsError(
-                                'Wrong result', json, expected_result)
-                    if xml != expected_result:
-                        raise TestLibFM.DifferentResultsError(
-                                'Wrong result', xml, expected_result)
-            except Exception, ex:
-                print ex
-                print 'Error encountered in API call: %s' % \
-                            inspect.getsource(test_function)
-                test_status = False
-        self.assertTrue(test_status, 'Some API calls have failed')
     
                 
 class TestLibFMError(unittest.TestCase):
