@@ -13,13 +13,13 @@ class TestLibFM(unittest.TestCase):
         self.fake_user = 'erheherhreherhe'
         self.fake_artist = 'wdehgehrhrhrh'
         #see http://www.last.fm/api/desktopauth for how to generate your own sk
-        self.session_key = None
+        self.libFM.session_key = None
 
     def session(method):
         """Skip methods that require authentication when sk is not hardcoded"""
         
         def wrapper(self, *args, **kwargs):
-            if self.session_key != None:
+            if self.libFM.session_key != None:
                 return method(self, *args, **kwargs)
             else:
                 return
@@ -43,9 +43,8 @@ class TestLibFM(unittest.TestCase):
 
     @session
     def test_write_method(self):
-        print 'here'
         response = self.libFM.write('artist.addTags', artist='Pearl Jam',
-                                    tags='Grunge', sk=self.session_key)
+                                    tags='Grunge')
         if 'status' in response:
             if response['status'] == 'ok':
                 return

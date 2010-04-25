@@ -42,6 +42,7 @@ class LibFM(object):
     def __init__(self, api_key, secret):
         self.api_key = api_key
         self.secret = secret
+        self.session_key = None
         self.force_xml_responses = False
 
     def read(self, method, **kwargs):
@@ -53,9 +54,11 @@ class LibFM(object):
     def get_token(self):
         return self._call_method('auth.getToken', mode='w')
 
-    def get_session(self, token):
-        return self._call_method('auth.getSession', {'token' : token},
+    def create_session(self, token):
+        response = self._call_method('auth.getSession', {'token' : token},
                                  mode='w')
+        self.session_key = response['session']['key']
+        return response
 
     def _call_method(self, name, args={}, mode='r'):
         """Handle standard API methods."""
@@ -107,6 +110,7 @@ class LibFM(object):
             args['format'] = 'json'
 
         if mode is 'w':
+            args['sk'] = self.session_key
             args['api_sig'] = self._sign_method(args)
         
         return urllib.urlencode(args)
