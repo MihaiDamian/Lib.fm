@@ -60,6 +60,14 @@ class LibFM(object):
         self.session_key = response['session']['key']
         return response
 
+    def create_mobile_session(self, username, password):
+        auth_token = self._create_auth_token(username, password)
+        response = self._call_method('auth.getMobileSession',
+                        {'username' : username, 'authToken' : auth_token,},
+                        'w')
+        self.session_key = response['session']['key']
+        return response
+
     def _call_method(self, name, args={}, mode='r'):
         """Handle standard API methods."""
         
@@ -122,6 +130,12 @@ class LibFM(object):
         for name, value in params:
             call_mangle = call_mangle + name + str(value)
         return md5.new(call_mangle + self.secret).hexdigest()
+
+    def _create_auth_token(self, username, password):
+        username = username.lower()
+        password_hash = md5.new(password).hexdigest()
+        return md5.new(username + password_hash).hexdigest()
+        
     
 class LibFMResponse(object):
     """Base class for handling lib.fm responses."""
