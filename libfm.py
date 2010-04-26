@@ -44,6 +44,7 @@ class LibFM(object):
         self.secret = secret
         self.session_key = None
         self.force_xml_responses = False
+        self.proxy = None
 
     def read(self, method, **kwargs):
         return self._call_method(method, kwargs, 'r')
@@ -83,12 +84,7 @@ class LibFM(object):
         request_args = self._create_request_args(name, args, response_format,
                                                  mode)
         try:
-            if request_type == 'GET':
-                call_params = (LIBFM_URL + '?' + request_args, None)
-            else:
-                call_params = (LIBFM_URL, request_args)
-            http_response = urllib2.urlopen(call_params[0],
-                                            call_params[1]).read()
+            http_response = self._send_request(request_type, request_args)
         except urllib2.HTTPError, httpException:
             try:
                 # the server will occasionally raise HTTP errors for XML reqs.
@@ -105,6 +101,18 @@ class LibFM(object):
             response = XMLResponse(http_response)
             
         return response.parse()
+
+    def _send_request(self, request_type, request_args):
+        if request_type == 'GET':
+            call_params = (LIBFM_URL + '?' + request_args, None)
+        else:
+            call_params = (LIBFM_URL, request_args)
+        if self.proxy is not None:
+            proxy_handler = urllib2.ProxyHandler({'http' : self.proxy})
+            opener = urllib2.build_opener(proxy_handler)
+            return opener.open(call_params[0], call_params[1]).read()
+        else:
+            return urllib2.urlopen(call_params[0], call_params[1]).read()
 
     def _create_request_args(self, name, args, response_format, mode):
         """
