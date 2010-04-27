@@ -23,6 +23,8 @@ LIBFM_URL = 'http://ws.audioscrobbler.com/2.0/'
 
 class LibFMError(Exception):
 
+    invalid_secret_key = 100
+
     def __init__(self, code, message):
         self.code = int(code)
         self.message = message
@@ -39,7 +41,7 @@ class LibFMError(Exception):
 class LibFM(object):
     """Provides access to last.fm API."""
 
-    def __init__(self, api_key, secret):
+    def __init__(self, api_key, secret=None):
         self.api_key = api_key
         self.secret = secret
         self.session_key = None
@@ -132,6 +134,10 @@ class LibFM(object):
         return urllib.urlencode(args)
 
     def _sign_method(self, args):
+        if self.secret is None:
+            raise LibFMError(LibFMError.invalid_secret_key,
+                             'You need to provide a valid secret key.')
+        
         params = args.items()
         params.sort()
         call_mangle = ''
