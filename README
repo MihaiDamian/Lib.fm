@@ -1,4 +1,28 @@
-Lib.fm is undergoing active development and not ready for production use.
+Lib.fm is a lightweight wrapper over the last.fm API.
+
+This library is compatible with Python 2.5 upwards.
+
+All API methods are handled through the 'read' and 'write' methods.
+
+Methods from the API's Auth should not be called directly. Instead use 
+the equivalent 'create_mobile_session', 'create_session' and 'get_token'.
+
+The 'read' and 'write' methods will return a JSON like structure made up of
+lists and dictionaries. The same structure will be generated regardless the
+format of the actual API method response (XML or JSON). By default libfm will
+try to ask for JSON response formats. See http://www.last.fm/api/rest for the
+rules on how XML responses get transformed into JSON.
+
+Error responses will be raised as exceptions of type LibFMError. Error codes
+above 100 correspond to error types introduced by this library.
+
+Http proxies are supported per LibFm object instance.
+
+LibFm's instances are thread safe, provided you refrain from modifying their 
+instance members mid-execution :).
+
+See example.py for usage examples.
+
 
 
 The MIT License

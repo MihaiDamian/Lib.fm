@@ -46,7 +46,7 @@ class LibFM(object):
         self.secret = secret
         self.session_key = None
         self.force_xml_responses = False
-        self.proxy = None
+        self.proxy = None # The url of the http proxy
 
     def read(self, method, **kwargs):
         """
@@ -79,12 +79,16 @@ class LibFM(object):
         return self._call_method('auth.getToken', mode='w')['token']
 
     def create_session(self, token):
+        """Create an auto-managed session"""
+        
         response = self._call_method('auth.getSession', {'token' : token},
                                  mode='w')
         self.session_key = response['session']['key']
         return response
 
     def create_mobile_session(self, username, password):
+        """Create an auto-managed session"""
+        
         auth_token = self._create_auth_token(username, password)
         response = self._call_method('auth.getMobileSession',
                         {'username' : username, 'authToken' : auth_token,},
@@ -272,3 +276,8 @@ class XMLResponse(LibFMResponse):
             if ':' not in key:
                 result.update({key : value})
         return result
+
+if __name__ == '__main__':
+    # TODO: moves these to a unit test
+    libFM = LibFM("2b3268cef9e10b81c4359cd03b4e6373", "f935eb35203409a4fc3f7fc37318ab3e")
+    print libFM.get_token()
