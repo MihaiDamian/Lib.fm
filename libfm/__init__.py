@@ -49,13 +49,34 @@ class LibFM(object):
         self.proxy = None
 
     def read(self, method, **kwargs):
+        """
+        Handler for API read methods.
+
+        method is the only required parameter for this function. It's value
+        is the full name of an API method. E.g. 'tag.search'.
+
+        The following named parameters are passed directly to the invoked API
+        method.
+
+        """
         return self._call_method(method, kwargs, 'r')
 
     def write(self, method, **kwargs):
+        """
+        Handler for API read methods.
+
+        method is the only required parameter for this function. It's value
+        is the full name of an API method. E.g. 'tag.search'.
+
+        The following named parameters are passed directly to the invoked API
+        method.
+
+        """
         return self._call_method(method, kwargs, 'w')
 
     def get_token(self):
-        return self._call_method('auth.getToken', mode='w')
+        """Returns an authentication token"""
+        return self._call_method('auth.getToken', mode='w')['token']
 
     def create_session(self, token):
         response = self._call_method('auth.getSession', {'token' : token},
