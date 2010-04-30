@@ -276,8 +276,3 @@ class XMLResponse(LibFMResponse):
             if ':' not in key:
                 result.update({key : value})
         return result
-
-if __name__ == '__main__':
-    # TODO: moves these to a unit test
-    libFM = LibFM("2b3268cef9e10b81c4359cd03b4e6373", "f935eb35203409a4fc3f7fc37318ab3e")
-    print libFM.get_token()
