@@ -1,5 +1,7 @@
 Lib.fm is a lightweight wrapper over the last.fm API.
 
+Use 'easy_install libfm' to install this library.
+
 This library is compatible with Python 2.5 upwards.
 
 All API methods are handled through the 'read' and 'write' methods.
