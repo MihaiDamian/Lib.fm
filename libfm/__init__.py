@@ -1,4 +1,4 @@
-import md5
+from hashlib import md5
 import urllib
 import urllib2
 from xml.dom import minidom
@@ -168,12 +168,12 @@ class LibFM(object):
         call_mangle = ''
         for name, value in params:
             call_mangle = call_mangle + name + str(value)
-        return md5.new(call_mangle + self.secret).hexdigest()
+        return md5(call_mangle + self.secret).hexdigest()
 
     def _create_auth_token(self, username, password):
         username = username.lower()
-        password_hash = md5.new(password).hexdigest()
-        return md5.new(username + password_hash).hexdigest()
+        password_hash = md5(password).hexdigest()
+        return md5(username + password_hash).hexdigest()
         
     
 class LibFMResponse(object):
