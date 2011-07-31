@@ -1,4 +1,5 @@
-import libfm
+from libfm import LibFM
+from libfm import LibFMError
 
 # create a handler instance with API key and application secret
 lib_fm = LibFM('api key...', 'application secret...')
