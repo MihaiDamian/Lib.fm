@@ -20,6 +20,8 @@ __all__ = ['LibFM', 'LibFMError', ]
 
 
 LIBFM_URL = 'http://ws.audioscrobbler.com/2.0/'
+LIBFM_AUTH_URL = 'http://www.last.fm/api/auth'
+
 
 class LibFMError(Exception):
 
@@ -77,6 +79,23 @@ class LibFM(object):
     def get_token(self):
         """Returns an authentication token"""
         return self._call_method('auth.getToken', mode='w')['token']
+
+    def token_authorization_url(self, token):
+        """An URL where the user can validate a token created with get_token"""
+        params = {'api_key' : self.api_key, 'token' : token}
+        return 'http://www.last.fm/api/auth/?' + urllib.urlencode(params)
+
+    def token_request_url(self, callback_url = None):
+        """
+        Returns an URL where the user can validate your application.
+        
+        A token will be sent either on your application's default callback URL
+        or on the specified callback in the 'token' GET variable
+        """
+        params = {'api_key' : self.api_key}
+        if callback_url:
+            params.update({'cb' : callback_url})
+        return 'http://www.last.fm/api/auth/?' + urllib.urlencode(params)
 
     def create_session(self, token):
         """Create an auto-managed session"""
